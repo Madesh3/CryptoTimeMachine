@@ -9,17 +9,29 @@ interface BitcoinHistoricalData {
 }
 
 const fetchBitcoinHistoricalData = async () => {
-  // Using market chart endpoint which provides allowed historical data
-  const response = await fetch(
-    "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily"
-  );
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error?.status?.error_message || 'Failed to fetch data');
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily",
+      {
+        headers: {
+          'Accept': 'application/json',
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a minute.');
+      }
+      throw new Error(errorData.error?.status?.error_message || 'Failed to fetch data');
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching Bitcoin data:', error);
+    throw error;
   }
-  
-  return response.json();
 };
 
 const InvestmentCalculator = () => {
@@ -27,10 +39,11 @@ const InvestmentCalculator = () => {
   const [startYear, setStartYear] = useState("2023");
   const { toast } = useToast();
 
-  const { data: historicalData, isLoading, error } = useQuery<BitcoinHistoricalData>({
+  const { data: historicalData, isLoading, error } = useQuery({
     queryKey: ["bitcoinHistorical"],
     queryFn: fetchBitcoinHistoricalData,
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const handleCalculate = () => {
@@ -52,7 +65,6 @@ const InvestmentCalculator = () => {
       return;
     }
 
-    // Calculate potential returns based on available data
     if (historicalData?.prices) {
       const initialPrice = historicalData.prices[0][1];
       const currentPrice = historicalData.prices[historicalData.prices.length - 1][1];
@@ -100,13 +112,13 @@ const InvestmentCalculator = () => {
             className="w-full"
             disabled={isLoading}
           >
-            Calculate Returns
+            {isLoading ? "Loading..." : "Calculate Returns"}
           </Button>
         </div>
       </div>
       {error && (
         <p className="mt-4 text-sm text-destructive">
-          Error fetching data. Please try again later.
+          {error instanceof Error ? error.message : "Error fetching data. Please try again later."}
         </p>
       )}
     </div>

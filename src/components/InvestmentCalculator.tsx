@@ -75,8 +75,8 @@ const InvestmentCalculator = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="glass-card p-6 rounded-lg mb-8 animate-fade-in">
+    <div className="space-y-8"> {/* Changed from space-y-6 to space-y-8 for more spacing */}
+      <div className="glass-card p-6 rounded-lg animate-fade-in">
         <h2 className="text-xl font-semibold mb-6">Investment Calculator</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -122,7 +122,7 @@ const InvestmentCalculator = () => {
       </div>
 
       {calculatedReturn && (
-        <div className="glass-card p-6 rounded-lg animate-fade-in">
+        <div className="glass-card p-6 rounded-lg animate-fade-in mt-8"> {/* Added mt-8 for extra top margin */}
           <h2 className="text-xl font-semibold mb-6">Investment Results</h2>
           <div className="space-y-4">
             <div>

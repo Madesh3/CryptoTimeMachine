@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Select } from "@/components/ui/select";
 
 interface BitcoinHistoricalData {
   prices: [number, number][];
@@ -37,6 +38,7 @@ const fetchBitcoinHistoricalData = async () => {
 const InvestmentCalculator = () => {
   const [investment, setInvestment] = useState("1000");
   const [startYear, setStartYear] = useState("2023");
+  const [startMonth, setStartMonth] = useState("1");
   const [calculatedReturn, setCalculatedReturn] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -75,9 +77,9 @@ const InvestmentCalculator = () => {
   };
 
   return (
-    <div className="space-y-8"> {/* Changed from space-y-6 to space-y-8 for more spacing */}
+    <div className="space-y-8">
       <div className="glass-card p-6 rounded-lg animate-fade-in">
-        <h2 className="text-xl font-semibold mb-6">Investment Calculator</h2>
+        <h2 className="text-xl font-semibold mb-6">What if Investment Calculator</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -104,7 +106,23 @@ const InvestmentCalculator = () => {
               className="w-full"
             />
           </div>
-          <div className="flex items-end">
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Start Month
+            </label>
+            <select
+              value={startMonth}
+              onChange={(e) => setStartMonth(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <option key={month} value={month}>
+                  {new Date(2000, month - 1).toLocaleString('default', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="md:col-span-3">
             <Button
               onClick={handleCalculate}
               className="w-full"
@@ -122,8 +140,8 @@ const InvestmentCalculator = () => {
       </div>
 
       {calculatedReturn && (
-        <div className="glass-card p-6 rounded-lg animate-fade-in mt-8"> {/* Added mt-8 for extra top margin */}
-          <h2 className="text-xl font-semibold mb-6">Investment Results</h2>
+        <div className="glass-card p-6 rounded-lg animate-fade-in mt-8">
+          <h2 className="text-xl font-semibold mb-6">What if Investment Results</h2>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground">Initial Investment</p>

@@ -5,28 +5,32 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
 interface BitcoinHistoricalData {
-  market_data: {
-    current_price: {
-      usd: number;
-    };
-  };
+  prices: [number, number][];
 }
 
 const fetchBitcoinHistoricalData = async () => {
+  // Using market chart endpoint which provides allowed historical data
   const response = await fetch(
-    "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=01-01-2009"
+    "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily"
   );
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.status?.error_message || 'Failed to fetch data');
+  }
+  
   return response.json();
 };
 
 const InvestmentCalculator = () => {
   const [investment, setInvestment] = useState("1000");
-  const [startYear, setStartYear] = useState("2009");
+  const [startYear, setStartYear] = useState("2023");
   const { toast } = useToast();
 
-  const { data: historicalData, isLoading } = useQuery<BitcoinHistoricalData>({
+  const { data: historicalData, isLoading, error } = useQuery<BitcoinHistoricalData>({
     queryKey: ["bitcoinHistorical"],
     queryFn: fetchBitcoinHistoricalData,
+    retry: 1,
   });
 
   const handleCalculate = () => {
@@ -39,11 +43,26 @@ const InvestmentCalculator = () => {
       return;
     }
 
-    // Calculate potential returns (to be implemented with real data)
-    toast({
-      title: "Investment Calculated",
-      description: `Calculating returns for $${investment} invested in ${startYear}`,
-    });
+    if (Number(startYear) < 2023) {
+      toast({
+        title: "Date Range Limited",
+        description: "Due to API limitations, we can only calculate returns for the past year. Please select 2023 or later.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Calculate potential returns based on available data
+    if (historicalData?.prices) {
+      const initialPrice = historicalData.prices[0][1];
+      const currentPrice = historicalData.prices[historicalData.prices.length - 1][1];
+      const returns = (Number(investment) * (currentPrice / initialPrice)).toFixed(2);
+      
+      toast({
+        title: "Investment Calculated",
+        description: `Based on available data, your $${investment} investment would be worth $${returns} today`,
+      });
+    }
   };
 
   return (
@@ -70,7 +89,7 @@ const InvestmentCalculator = () => {
             type="number"
             value={startYear}
             onChange={(e) => setStartYear(e.target.value)}
-            min="2009"
+            min="2023"
             max={new Date().getFullYear()}
             className="w-full"
           />
@@ -85,6 +104,11 @@ const InvestmentCalculator = () => {
           </Button>
         </div>
       </div>
+      {error && (
+        <p className="mt-4 text-sm text-destructive">
+          Error fetching data. Please try again later.
+        </p>
+      )}
     </div>
   );
 };
